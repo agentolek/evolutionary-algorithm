@@ -10,7 +10,6 @@ warnings.filterwarnings("ignore")
 # but it's already done so eeeee.
 
 
-
 # converting the sklearn data to torch dataset
 digits = datasets.load_digits()
 # nd arrays
@@ -67,6 +66,7 @@ if __name__ == "__main__":
     #     print(sample["label"], sample["image"])
     #     i +=1
     #     if i == 10: break
+    print(len())
     train_dataloader = DataLoader(transformed_dataset, batch_size=64)
     for x, y in enumerate(train_dataloader):
         # print(batch)

@@ -5,20 +5,22 @@ from dataset import transformed_dataset
 from model import NeuralNetwork
 
 #uhh i think the example on pytorch.org was bad and i actually have to split the data
-train_dataloader = DataLoader(transformed_dataset, batch_size=64, shuffle=True)
-test_dataloader = DataLoader(transformed_dataset, batch_size=64, shuffle=True)
+# OLEK - data has now been split
+train_split = int(0.8 * len(transformed_dataset))
+train_dataloader = DataLoader(transformed_dataset[:train_split], batch_size=64, shuffle=True)
+test_dataloader = DataLoader(transformed_dataset[train_split:], batch_size=64, shuffle=True)
 
 
 model = NeuralNetwork()
 learning_rate = 1e-3
 batch_size = 64
+momentum = 0.9
 epochs = 30
 
 loss_fn = nn.CrossEntropyLoss()
 
 # research other optimizers later
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
 
 # code in docs was prob outdated
@@ -26,17 +28,21 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     model.train()
 
-    for batch, (X, y) in enumerate(dataloader):
-        # X, y are not accessing the right elements, maybe batch too
-        pred = model(X)
-        loss = loss_fn(pred, y)
+    # print(dataloader[0])
+    for index, data in enumerate(dataloader):
+        # I do not know what is going on, need to look at shape for dataloader
+        inputs, labels = data
+        pred = model(inputs)
 
-        loss.backward()
-        optimizer.step()
         optimizer.zero_grad()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * batch_size + len(X)
+        loss = loss_fn(pred, labels)
+        loss.backward()
+
+        optimizer.step()
+
+        if index % 100 == 0:
+            loss, current = loss.item(), index * batch_size + len(labels)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
