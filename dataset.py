@@ -1,9 +1,8 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-import numpy as np
-from skimage import transform
 from sklearn import datasets
 import warnings
+
 warnings.filterwarnings("ignore")
 
 # i think this whole file can be done using torchvision
@@ -15,7 +14,6 @@ digits = datasets.load_digits()
 # nd arrays
 labels = digits["target"]
 image_arr = digits["data"]
-
 
 
 # basically copied from pytorch website
@@ -35,7 +33,7 @@ class DigitsDataSet(Dataset):
         image = self.image_data[idx]
         label = self.labels[idx]
 
-        sample = {"image": image, 'label': label}
+        sample = {"image": image, "label": label}
         if self.transform:
             sample = self.transform(sample)
 
@@ -53,6 +51,7 @@ class ToTensor(object):
         # return {'image': torch.from_numpy(image),
         #         "label": sample["label"]}
         return (image, label)
+
 
 transformed_dataset = DigitsDataSet(labels, image_arr, ToTensor())
 

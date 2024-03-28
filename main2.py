@@ -4,11 +4,15 @@ from torch.utils.data import DataLoader
 from dataset import transformed_dataset
 from model import NeuralNetwork
 
-#uhh i think the example on pytorch.org was bad and i actually have to split the data
+# uhh i think the example on pytorch.org was bad and i actually have to split the data
 # OLEK - data has now been split
 train_split = int(0.8 * len(transformed_dataset))
-train_dataloader = DataLoader(transformed_dataset[:train_split], batch_size=64, shuffle=True)
-test_dataloader = DataLoader(transformed_dataset[train_split:], batch_size=64, shuffle=True)
+train_dataloader = DataLoader(
+    transformed_dataset[:train_split], batch_size=64, shuffle=True
+)
+test_dataloader = DataLoader(
+    transformed_dataset[train_split:], batch_size=64, shuffle=True
+)
 
 
 model = NeuralNetwork()
@@ -60,7 +64,10 @@ def test_loop(dataloader, model, loss_fn):
 
     test_loss /= num_batches
     correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    print(
+        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+    )
+
 
 if __name__ == "__main__":
     for t in range(epochs):
@@ -68,4 +75,3 @@ if __name__ == "__main__":
         train_loop(train_dataloader, model, loss_fn, optimizer)
         test_loop(test_dataloader, model, loss_fn)
     print("Done!")
-
