@@ -16,9 +16,11 @@ val_dataset = dataset[2]
 
 model = NeuralNetwork()
 
+# learning rate - describes the size of the step taken by our network (step size = gradient * learning rate)
 learning_rate = 30e-3
+# batch size - the number of data points from which the gradient will be calculated each iteration
 batch_size = 40
-epochs = ceil((len(train_dataset) + len(test_dataset)) / batch_size)
+epochs = 20
 
 
 train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
@@ -27,21 +29,30 @@ val_dataloader = DataLoader(val_dataset, batch_size, shuffle=True)
 
 
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+# SGD optimizer - implements stochastic gradient descent,
+# which means selecting a group of random data points and
+# performing calculations on those. Kind of like another batch size? Unsure.
+
+# after plugging in momentum, the model more quickly converged onto a local minimum,
+# but the accuracy was worse (93.2% to 95.3%)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
 
 def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
+
+    # doesn't train the model, simply puts it in training mode. Some
+    # things in model work differently depending on train/eval mode.
     model.train()
 
     for batch, (X, y) in enumerate(dataloader):
+        # makes model give predictions based on its current parameters
         pred = model(X)
+        # calculates loss
         loss = loss_fn(pred, y)
 
         optimizer.zero_grad()
-
         loss.backward()
-
         optimizer.step()
 
         if batch % 5 == 0:
