@@ -1,6 +1,4 @@
-from dataset import DigitsDataSet
 import torch
-import os
 from torch import nn
 
 # this could work better (device agnostic code)
@@ -16,9 +14,12 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.ReLU(),
             nn.Linear(8*8, 10)
         )
     def forward(self, x):
+        #sklearn used float64, idk if it should be converted in this place but it works
         x = self.flatten(x.to(torch.float32))
         logits = self.linear_relu_stack(x)
         return logits
