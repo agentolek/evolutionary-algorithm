@@ -1,0 +1,9 @@
+Temat 3: Algorytm ewolucyjny do trenowania sieci neuronowej
+Dataset: Digits (sklearn) The Digit Dataset — scikit-learn 1.4.0 documentation
+https://scikit-learn.org/stable/auto_examples/datasets/plot_digits_last_image.html
+Biblioteki: PyTorch, Numpy, Sklearn
+
+- Przygotować prostą sieć neuronową (perceptron dwuwarstwowy) w PyTorch.
+- Wytrenować ją metodą gradientową i zapisać model.
+- Napisać algorytm ewolucyjny, który będzie optymalizował parametry sieci.
+- Porównać wyniki osiągane przez algorytm ewolucyjny i metodę gradientową.

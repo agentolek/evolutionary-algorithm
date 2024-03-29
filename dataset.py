@@ -9,7 +9,6 @@ warnings.filterwarnings("ignore")
 # i think this whole file can be done using torchvision
 # templates but it's already too late.
 
-
 # converting the sklearn data to torch dataset
 digits = datasets.load_digits()
 

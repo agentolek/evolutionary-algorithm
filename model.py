@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 
+# this could work better (device agnostic code)
+# device = "cuda" if torch.cuda.is_available() else "cpu"
 device = "cpu"
 
 class NeuralNetwork(nn.Module):

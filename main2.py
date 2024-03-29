@@ -36,12 +36,15 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         pred = model(X)
         loss = loss_fn(pred, y)
 
-        loss.backward()
-        optimizer.step()
         optimizer.zero_grad()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * batch_size + len(X)
+        loss = loss_fn(pred, labels)
+        loss.backward()
+
+        optimizer.step()
+
+        if index % 100 == 0:
+            loss, current = loss.item(), index * batch_size + len(labels)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
@@ -59,7 +62,10 @@ def test_loop(dataloader, model, loss_fn):
 
     test_loss /= num_batches
     correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    print(
+        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+    )
+
 
 
 if __name__ == "__main__":
