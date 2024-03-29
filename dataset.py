@@ -15,6 +15,7 @@ digits = datasets.load_digits()
 labels = digits["target"]
 image_arr = digits["data"]
 
+
 class DigitsDataSet(Dataset):
     def __init__(self, labels, image_data, transform=None):
         self.labels = labels
@@ -36,6 +37,8 @@ class DigitsDataSet(Dataset):
             sample = self.transform(sample)
 
         return sample
+
+
 # ToTensor sample was useless, ig torch does it automatically to ndarrays
 # maybe could convert to float32 using a transform here
 
@@ -55,5 +58,5 @@ if __name__ == "__main__":
     #     print(y)
     #     print("\n")
     print(len(transformed_dataset))
-    dataset = random_split(transformed_dataset, (800,800,197))
+    dataset = random_split(transformed_dataset, (800, 800, 197))
     print(dataset)

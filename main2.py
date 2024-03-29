@@ -7,7 +7,9 @@ from torch.utils.data import random_split
 from math import ceil
 
 
-dataset = random_split(transformed_dataset, (832,832,133)) # the tuple elements have to sum up to 1797
+dataset = random_split(
+    transformed_dataset, (832, 832, 133)
+)  # the tuple elements have to sum up to 1797
 train_dataset = dataset[0]
 test_dataset = dataset[1]
 val_dataset = dataset[2]
@@ -16,7 +18,7 @@ model = NeuralNetwork()
 
 learning_rate = 30e-3
 batch_size = 40
-epochs = ceil((len(train_dataset) + len(test_dataset))/batch_size)
+epochs = ceil((len(train_dataset) + len(test_dataset)) / batch_size)
 
 
 train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
@@ -38,13 +40,12 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
         optimizer.zero_grad()
 
-        loss = loss_fn(pred, labels)
         loss.backward()
 
         optimizer.step()
 
-        if index % 100 == 0:
-            loss, current = loss.item(), index * batch_size + len(labels)
+        if batch % 5 == 0:
+            loss, current = loss.item(), batch * batch_size + len(y)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
@@ -67,7 +68,6 @@ def test_loop(dataloader, model, loss_fn):
     )
 
 
-
 if __name__ == "__main__":
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
@@ -79,5 +79,3 @@ if __name__ == "__main__":
     for t in range(3):
         print(f"Epoch {t+1}\n-------------------------------")
         test_loop(val_dataloader, model, loss_fn)
-
-
