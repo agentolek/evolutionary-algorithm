@@ -1,21 +1,95 @@
-import matplotlib.pyplot as plt
-from sklearn import datasets
+import torch
+from torch import nn
+from torch.utils.data import DataLoader
+from dataset import transformed_dataset
+from model import NeuralNetwork
+from torch.utils.data import random_split
+from math import ceil
 
-# Load the digits dataset
-digits = datasets.load_digits()
-print(digits.keys())
-print("Displayed digit is " + str(digits.target[648]))
 
-plt.figure(1, figsize=(4, 4))
-plt.imshow(digits.images[648], cmap=plt.cm.gray_r, interpolation="nearest")
-plt.show()
+dataset = random_split(
+    transformed_dataset, (898, 899)
+)  # the tuple elements have to sum up to 1797
+train_dataset = dataset[0]
+test_dataset = dataset[1]
 
-"""
-explanation for team:
-the datasets loads a bunch object with the training data - basically a dictionary with easier access to elements
-It's keys are: 'data', 'target', 'frame', 'feature_names', 'target_names', 'images', 'DESCR'
-important ones:
-data is the main data array
-image is the data converted into a 2d array
-target tells which digit the data is for
-"""
+model = NeuralNetwork()
+
+# learning rate - describes the size of the step taken by our network (step size = gradient * learning rate)
+learning_rate = 30e-3
+# batch size - the number of data points from which the gradient will be calculated each iteration
+batch_size = 40
+epochs = 20
+
+
+train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
+
+
+loss_fn = nn.CrossEntropyLoss()
+# SGD optimizer - implements stochastic gradient descent,
+# which means selecting a group of random data points and
+# performing calculations on those. Kind of like another batch size? Unsure.
+
+# after plugging in momentum, the model more quickly converged onto a local minimum,
+# but the accuracy was worse (93.2% to 95.3%)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+
+
+def train_loop(dataloader, model, loss_fn, optimizer):
+    size = len(dataloader.dataset)
+
+    # doesn't train the model, simply puts it in training mode. Some
+    # things in model work differently depending on train/eval mode.
+    model.train()
+
+    for batch, (X, y) in enumerate(dataloader):
+        # makes model give predictions based on its current parameters
+        pred = model(X)
+        # calculates loss
+        loss = loss_fn(pred, y)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        if batch % 5 == 0:
+            loss, current = loss.item(), batch * batch_size + len(y)
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+
+def test_loop(dataloader, model, loss_fn):
+    model.eval()
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    test_loss, correct = 0, 0
+
+    with torch.no_grad():
+        for X, y in dataloader:
+            pred = model(X)
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+
+    test_loss /= num_batches
+    correct /= size
+    print(
+        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+    )
+
+
+if __name__ == "__main__":
+    # for t in range(epochs):
+    #     print(f"Epoch {t+1}\n-------------------------------")
+    #     train_loop(train_dataloader, model, loss_fn, optimizer)
+    # print("Done!")
+
+    # torch.save(model, "og_model.txt")
+
+    # model2 = torch.load('og_model.txt')
+    total_params = [p.data for p in model.parameters()]
+    print(total_params[0])
+
+    # print("\n Testing")
+    # for t in range(3):
+    #     print(f"Epoch {t+1}\n-------------------------------")
+    #     test_loop(test_dataloader, model, loss_fn)
