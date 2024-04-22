@@ -5,7 +5,7 @@ from dataset import transformed_dataset
 from model import NeuralNetwork
 from torch.utils.data import random_split
 from math import ceil
-from evolutionary import evolve, create_param_sets
+from evolutionary import evolve
 
 
 dataset = random_split(
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     print("\n Testing")
     test_loop(test_dataloader, model, loss_fn)
 
-    load_params_to_model(model, create_param_sets(1)[0])
+    # load_params_to_model(model, create_param_sets(1)[0])
 
-    print("\n Testing")
-    test_loop(test_dataloader, model, loss_fn)
+    # print("\n Testing")
+    # test_loop(test_dataloader, model, loss_fn)

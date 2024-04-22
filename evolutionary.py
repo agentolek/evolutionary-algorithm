@@ -142,15 +142,16 @@ def create_generation(params_sets, gen_size, layer_mutate_prob):
 def evolve(epochs, gen_size):
 
     params_sets = create_param_sets(gen_size) # begin with random arrays of parameters
+    elitism_factor = 0.2
 
     for _ in range(epochs):
         prob_distribution = softmax(np.array(evaluate_all(params_sets)))
         selected_index = np.random.choice(np.arange(gen_size), size=gen_size//2, p=prob_distribution, replace=False)
         selected_params = [params_sets[x] for x in selected_index]
 
-        temp = sorted(list(zip(prob_distribution, params_sets)), key=lambda x:x[0])[:int(gen_size*0.05)]
+        temp = sorted(list(zip(prob_distribution, params_sets)), key=lambda x:x[0])[:int(gen_size*elitism_factor)]
         temp = list(list(zip(*temp))[1])
-        params_sets = temp + create_generation(selected_params, math.ceil(gen_size*0.9), layer_mutate_prob=[0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008])
+        params_sets = temp + create_generation(selected_params, math.ceil(gen_size*(1-elitism_factor)), layer_mutate_prob=[0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008])
 
     temp = list(zip(evaluate_all(params_sets), params_sets))
     temp = sorted(temp, key=lambda x: x[0])
