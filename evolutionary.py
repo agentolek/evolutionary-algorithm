@@ -49,15 +49,17 @@ def load_params_to_model(params):
 def eval_loop(dataloader, model, loss_fn):
     model.eval()
     num_batches = len(dataloader)
-    test_loss = 0
+    correct = 0
 
     with torch.no_grad():
         for X, y in dataloader:
             pred = model(X)
-            test_loss += loss_fn(pred, y).item()
+            # test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 
-    test_loss /= num_batches
-    return test_loss
+    # test_loss /= num_batches
+    correct /= len(dataloader.dataset)
+    return correct
 
 
 dataset = random_split(
@@ -78,7 +80,7 @@ def evaluate_all(param_list):
     scores = []
     for elem in param_list:
         scores.append(evaluate(elem))
-    return [x / -0.1 for x in scores]
+    return [x for x in scores]
 
 
 def softmax(x):
@@ -148,7 +150,7 @@ def evolve(epochs, gen_size):
 
         temp = sorted(list(zip(prob_distribution, params_sets)), key=lambda x:x[0])[:int(gen_size*0.05)]
         temp = list(list(zip(*temp))[1])
-        params_sets = temp + create_generation(selected_params, math.ceil(gen_size*0.95), layer_mutate_prob=[0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008])
+        params_sets = temp + create_generation(selected_params, math.ceil(gen_size*0.9), layer_mutate_prob=[0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008])
 
     temp = list(zip(evaluate_all(params_sets), params_sets))
     temp = sorted(temp, key=lambda x: x[0])

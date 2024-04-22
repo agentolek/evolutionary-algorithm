@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # model2 = torch.load('og_model.txt')
 
-    load_params_to_model(model, evolve(20, 20))
+    load_params_to_model(model, evolve(50, 100))
 
     print("\n Testing")
     test_loop(test_dataloader, model, loss_fn)
