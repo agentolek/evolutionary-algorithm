@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from dataset import transformed_dataset
 from model import NeuralNetwork
 from torch.utils.data import random_split
+import math
 
 model = NeuralNetwork()
 parameters = [[name, p] for name, p in model.named_parameters()]
@@ -121,7 +122,7 @@ def choose_parent_indexes(num_of_pairs, index_range):
 
 def create_generation(params_sets, gen_size, layer_mutate_prob):
     
-    pairs = choose_parent_indexes(gen_size // 2, gen_size // 2)
+    pairs = choose_parent_indexes((gen_size // 2) + 1, gen_size // 2)
     new_gen = []
 
     for pair in pairs:
@@ -133,30 +134,30 @@ def create_generation(params_sets, gen_size, layer_mutate_prob):
         # this for loop is responsible for mutations in kids
         new_gen[i] = mutate_set(new_gen[i], layer_mutate_prob)
 
-    return tuple(new_gen)
+    return new_gen[:gen_size]
 
 
 def evolve(epochs, gen_size):
 
     params_sets = create_param_sets(gen_size) # begin with random arrays of parameters
+
     for _ in range(epochs):
         prob_distribution = softmax(np.array(evaluate_all(params_sets)))
-        # print(evaluate_all(params_sets)) 
-        # print(prob_distribution)
-        # print("\n")
         selected_index = np.random.choice(np.arange(gen_size), size=gen_size//2, p=prob_distribution, replace=False)
         selected_params = [params_sets[x] for x in selected_index]
-        params_sets = create_generation(selected_params, gen_size, layer_mutate_prob=[0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008])
 
+        temp = sorted(list(zip(prob_distribution, params_sets)), key=lambda x:x[0])[:int(gen_size*0.05)]
+        temp = list(list(zip(*temp))[1])
+        params_sets = temp + create_generation(selected_params, math.ceil(gen_size*0.95), layer_mutate_prob=[0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008])
 
     temp = list(zip(evaluate_all(params_sets), params_sets))
-    sorted(temp, key=lambda x: x[0])
-    
-    return temp[0][1]
+    temp = sorted(temp, key=lambda x: x[0])
+    print(temp[0][0], temp[-1][0])
+    return temp[-1][1]
     
 if __name__ == "__main__":
     random_params = create_param_sets(1)
-    params = evolve(200, 100)
-    print("Random loss: " + str(evaluate(params)))
+    params = evolve(20, 20)
+    print("Random loss: " + str(evaluate(random_params[0])))
     print("Evolved loss: " + str(evaluate(params)))
     
