@@ -5,6 +5,7 @@ from dataset import transformed_dataset
 from model import NeuralNetwork
 from torch.utils.data import random_split
 from math import ceil
+from evolutionary import evolve
 
 
 dataset = random_split(
@@ -77,6 +78,16 @@ def test_loop(dataloader, model, loss_fn):
     )
 
 
+def load_params_to_model(model, params):
+    pretrained_dict = model.state_dict()
+    counter = 0
+
+    for key in pretrained_dict.keys():
+        pretrained_dict[key] = torch.from_numpy(params[counter])
+        counter += 1
+
+    model.load_state_dict(pretrained_dict)
+
 if __name__ == "__main__":
     # for t in range(epochs):
     #     print(f"Epoch {t+1}\n-------------------------------")
@@ -86,10 +97,10 @@ if __name__ == "__main__":
     # torch.save(model, "og_model.txt")
 
     # model2 = torch.load('og_model.txt')
-    total_params = [p.data for p in model.parameters()]
-    print(total_params[0])
 
-    # print("\n Testing")
-    # for t in range(3):
-    #     print(f"Epoch {t+1}\n-------------------------------")
-    #     test_loop(test_dataloader, model, loss_fn)
+    load_params_to_model(model, evolve(30, 30))
+
+    print("\n Testing")
+    for t in range(3):
+        print(f"Epoch {t+1}\n-------------------------------")
+        test_loop(test_dataloader, model, loss_fn)
