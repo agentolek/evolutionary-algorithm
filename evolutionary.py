@@ -12,7 +12,7 @@ from dataset import transformed_dataset
 # parameters = [[name, p] for name, p in model.named_parameters()]
 
 # names = [name for name, p in parameters]
-class EvolutionaryAlgorithm:
+class Evo:
     
     model = NeuralNetwork()
     gen_size = 10
@@ -27,7 +27,7 @@ class EvolutionaryAlgorithm:
     # more = more change mutation, scales linear
     change_factor = 5
     # how many non-repeating pairs are created at once - higher number = more uniques
-    pairs_at_once = 3
+    pairs_at_once = 5
     # 1 in mutation_chance children will be subject to mutation
     mutation_chance = 6
     # what part of the sets will survive unchanged
@@ -160,11 +160,13 @@ class EvolutionaryAlgorithm:
         # index_range - what indexes to select from
         pairs = []
 
-        for _ in range(num_of_pairs // self.pairs_at_once + 1):
-            selected_indexes = np.random.choice(np.arange(len(prob_distribution)), size=2*self.pairs_at_once, p=prob_distribution, replace=False)
-            for i in range(self.pairs_at_once):
-                pairs.append(selected_indexes[i*2: (i+1)*2])
-
+        while(len(pairs) < num_of_pairs):
+            selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2, p=prob_distribution, replace=False))
+            if selected_indexes not in pairs:
+                pairs.append(selected_indexes)
+            # selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2*self.pairs_at_once, p=prob_distribution, replace=False))
+            # for i in range(self.pairs_at_once):
+            #     pairs.append(selected_indexes[i*2: (i+1)*2])
         return pairs
 
 
@@ -188,13 +190,9 @@ class EvolutionaryAlgorithm:
         return new_gen[:num_created]
 
     def _update_mutation_factor(self, ratio):
-        # if ratio == 0:
-        #     return 1
-        # y = 1/(ratio**(1/4)) - 1
-        # return y
         if ratio == 0: return
-        if ratio <0.05: self.mutate_factor *= 1.01
-        else: self.mutate_factor *= 0.99 
+        if ratio < 0.05: self.mutate_factor *= 1.01
+        elif ratio > 0.5: self.mutate_factor *= 0.98
 
 
     def _create_graph(self, avg, max_):
@@ -222,21 +220,12 @@ class EvolutionaryAlgorithm:
             accuracies = np.array(self._evaluate_all(params_sets))
             average_accuracy.append(sum(accuracies)/self.gen_size)
             max_accuracy.append(max(accuracies))
-            last_x_avg = sum(average_accuracy[-30:])/len(average_accuracy[-30:])
-            all_avg= sum(average_accuracy)/len(average_accuracy)
 
             # used to increase mutation if algorithm has stagnated
-            self._update_mutation_factor(ratio_of_acc)
-
-            # near 0 if stable - need more mutation
-            # higher - unstable - less mutation
+            last_x_avg = sum(average_accuracy[-5:])/len(average_accuracy[-5:])
+            all_avg= sum(average_accuracy)/len(average_accuracy)
             ratio_of_acc = abs(1 - last_x_avg/all_avg)
-            print(self.mutate_factor)
-            print(ratio_of_acc)
-            print("\n")
-
-            # print(mutation_factor(ratio_of_acc))
-            # print(layer_mutate_prob[-1])
+            self._update_mutation_factor(ratio_of_acc)
 
             prob_distribution = self._softmax(accuracies)
             # selected_index = np.random.choice(np.arange(gen_size), size=gen_size//2, p=prob_distribution, replace=False)
@@ -255,9 +244,9 @@ class EvolutionaryAlgorithm:
 
 
 if __name__ == "__main__":
-    my_evo = EvolutionaryAlgorithm()
+    my_evo = Evo()
     datasets = random_split(transformed_dataset, (898, 899))
     train_dataloader = DataLoader(datasets[0], batch_size=40, shuffle=True)
     test_dataloader = DataLoader(datasets[1], batch_size=40, shuffle=True)
-    params = my_evo.evolve(50, 20, train_dataloader)
+    params = my_evo.evolve(100, 20, train_dataloader)
     print("Evolved accuracy: " + str(my_evo.evaluate(params, test_dataloader)))

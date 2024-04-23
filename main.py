@@ -5,7 +5,7 @@ from dataset import transformed_dataset
 from model import NeuralNetwork
 from torch.utils.data import random_split
 from math import ceil
-from evolutionary import EvolutionaryAlgorithm
+from evolutionary import Evo
 
 
 dataset = random_split(
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # torch.save(model, "og_model.txt")
 
     # model2 = torch.load('og_model.txt')
-    my_evo = EvolutionaryAlgorithm()
+    my_evo = Evo()
     load_params_to_model(model, my_evo.evolve(50, 20, train_dataloader))
 
     print("\n Testing")
