@@ -76,7 +76,7 @@ def evaluate_all(param_list, dataloader):
 
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
-    temp = 20
+    temp = 10
     e_x = np.exp(x * temp)
     return e_x / e_x.sum()
 
@@ -94,7 +94,6 @@ def mutate_reset(array, mutation_prob):
 def mutate_change(array, mutation_prob):
     mutation_num = 3
     mutation_prob /= mutation_num
-    mask = np.random.randint(0,1/mutation_prob,size=array.shape).astype(bool)
 
     for _ in range(mutation_num):
         mask = np.random.randint(0,int(1/mutation_prob),size=array.shape).astype(bool)
@@ -143,6 +142,7 @@ def choose_parent_indexes(num_of_pairs, prob_distribution):
 
 def create_generation(params_sets, prob_distribution, gen_size, layer_mutate_prob):
     
+    mutation_chance = 4
     pairs = choose_parent_indexes((gen_size // 2) + 1, prob_distribution)
     new_gen = []
 
@@ -153,7 +153,10 @@ def create_generation(params_sets, prob_distribution, gen_size, layer_mutate_pro
     
     for i in range(gen_size):
         # this for loop is responsible for mutations in kids
-        new_gen[i] = mutate_set(new_gen[i], layer_mutate_prob)
+
+        # now only mutates 1 in mutation_chance children
+        if np.random.randint(0, mutation_chance) == False:
+            new_gen[i] = mutate_set(new_gen[i], layer_mutate_prob)
 
     return new_gen[:gen_size]
 
@@ -195,6 +198,6 @@ if __name__ == "__main__":
     datasets = random_split(transformed_dataset, (898, 899))
     train_dataloader = DataLoader(datasets[0], batch_size=40, shuffle=True)
     test_dataloader = DataLoader(datasets[1], batch_size=40, shuffle=True)
-    params = evolve(50, 100, train_dataloader)
+    params = evolve(200, 20, train_dataloader)
     print("Evolved accuracy: " + str(evaluate(params, test_dataloader)))
     
