@@ -103,15 +103,15 @@ def mutate_change(array, mutation_prob):
     return array
 
 def mutate_set(params_set, mutation_probs):
-    mutation_factor = 1
+    mutation_factor = 2
     new_set = []
     for i in range(len(params_set)):
         # reset_prob = (mutation_probs[i] / mutation_factor)*(21-epoch_counter)/20
         # change_prob = (mutation_probs[i] / mutation_factor)*(epoch_counter+1)/20
         # temp = mutate_reset(params_set[i], reset_prob)
         # new_set.append(mutate_change(temp, change_prob))
-        temp = mutate_reset(params_set[i], mutation_probs[i] / mutation_factor)
-        new_set.append(mutate_change(temp, mutation_probs[i] / mutation_factor))
+        temp = mutate_reset(params_set[i], mutation_probs[i] * mutation_factor)
+        new_set.append(mutate_change(temp, mutation_probs[i] * mutation_factor))
 
     return new_set
 
@@ -130,11 +130,13 @@ def cross_breed(pair):
 def choose_parent_indexes(num_of_pairs, prob_distribution):
     # num of pairs - how many pairs to create
     # index_range - what indexes to select from
+    batch_size = 3
     pairs = []
 
-    for _ in range(num_of_pairs):
-        selected_indexes = np.random.choice(np.arange(len(prob_distribution)), size=2, p=prob_distribution, replace=False)
-        pairs.append(selected_indexes)
+    for _ in range(num_of_pairs // batch_size + 1):
+        selected_indexes = np.random.choice(np.arange(len(prob_distribution)), size=2*batch_size, p=prob_distribution, replace=False)
+        for i in range(batch_size):
+            pairs.append(selected_indexes[i*2: (i+1)*2])
     
     return pairs
 
@@ -165,7 +167,7 @@ def create_graph(values, values2):
 def evolve(epochs, gen_size, dataloader):
 
     params_sets = create_param_sets(gen_size) # begin with random arrays of parameters
-    elitism_factor = 0.5
+    elitism_factor = 0.1
     average_accuracy = []
     max_accuracy = []
     for _ in range(epochs):
@@ -193,6 +195,6 @@ if __name__ == "__main__":
     datasets = random_split(transformed_dataset, (898, 899))
     train_dataloader = DataLoader(datasets[0], batch_size=40, shuffle=True)
     test_dataloader = DataLoader(datasets[1], batch_size=40, shuffle=True)
-    params = evolve(200, 100, train_dataloader)
+    params = evolve(50, 100, train_dataloader)
     print("Evolved accuracy: " + str(evaluate(params, test_dataloader)))
     
