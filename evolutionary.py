@@ -239,12 +239,12 @@ class EvolutionaryAlgorithm:
             params_sets = temp + self._create_generation(params_sets, prob_distribution, num_created=math.ceil(self.gen_size*(1-self.elitism_factor)))
 
 
-
         self._create_graph(average_accuracy, max_accuracy)
         temp = list(zip(self._evaluate_all(params_sets), params_sets))
         temp = sorted(temp, key=lambda x: x[0])
         print(temp[0][0], temp[-1][0])
         return temp[-1][1]
+
 
 if __name__ == "__main__":
     my_evo = EvolutionaryAlgorithm()
