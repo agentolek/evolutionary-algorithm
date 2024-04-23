@@ -18,16 +18,24 @@ class EvolutionaryAlgorithm:
     gen_size = 10
     dataloader = None
 
+    # number of separate times that noise will be added during _mutate_change
     mutation_num = 3
-    reset_factor = 1
-    change_factor = 5
-    pairs_at_once = 3
-
-    mutation_chance = 6
+    # the higher this is, the more mutation, scales linear
     mutate_factor = 1
+    # more = more reset mutation, scales linear
+    reset_factor = 1
+    # more = more change mutation, scales linear
+    change_factor = 5
+    # how many non-repeating pairs are created at once - higher number = more uniques
+    pairs_at_once = 3
+    # 1 in mutation_chance children will be subject to mutation
+    mutation_chance = 6
+    # what part of the sets will survive unchanged
+    elitism_factor = 0.2 
 
+    # the chances that a single element from a layer will be changed, individual per layer
     layer_mutate_probs = [0.001, 0.001, 0.002, 0.002, 0.003, 0.003, 0.004, 0.004]
-    elitism_factor = 0.2
+    
 
     def _create_random_tensor(self, *args):
         array = np.random.rand(*args) - 0.5
