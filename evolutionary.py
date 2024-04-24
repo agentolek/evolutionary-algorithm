@@ -36,6 +36,8 @@ class Evo:
     mutation_chance = 5
     # what part of the sets will survive unchanged
     elitism_factor = 0.1
+    # how many gens can a single set stay alive for
+    time_to_kill = 15
     # the chances that a single element from a layer will be changed, individual per layer
     layer_mutate_probs = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
 
@@ -285,7 +287,7 @@ class Evo:
             params_sets = elites + self._create_generation(params_sets, prob_distribution, num_created=self.gen_size-elite_num)
             # kill elite if it has lived for 10+ generations
             for i in range(elite_num):
-                if times_lived[i] >= 10:
+                if times_lived[i] >= self.time_to_kill:
                     params_sets[i] = self._create_param_sets(1)[0]
                     times_lived[i] = 0
 
@@ -302,5 +304,5 @@ if __name__ == "__main__":
     datasets = random_split(transformed_dataset, (898, 899))
     train_dataloader = DataLoader(datasets[0], batch_size=40, shuffle=True)
     test_dataloader = DataLoader(datasets[1], batch_size=40, shuffle=True)
-    params = my_evo.evolve(200, 20, train_dataloader)
+    params = my_evo.evolve(50, 20, train_dataloader)
     print("Evolved accuracy: " + str(my_evo.evaluate(params, test_dataloader)))
