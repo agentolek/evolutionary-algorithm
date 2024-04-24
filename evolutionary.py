@@ -9,9 +9,10 @@ import math
 import matplotlib.pyplot as plt
 from dataset import transformed_dataset
 
-# parameters = [[name, p] for name, p in model.named_parameters()]
+# TODO: play around with individual layer parameters
+# TODO: best dude must die after x epochs
+# TODO: change breeding to "krzyżowanie uśredniające"
 
-# names = [name for name, p in parameters]
 class Evo:
     
     model = NeuralNetwork()
@@ -20,28 +21,29 @@ class Evo:
 
     # number of separate times that noise will be added during _mutate_change
     mutation_num = 3
-    # the higher this is, the more mutation, scales linear
+    # the higher this is, the more mutation, scales linear. WARNING - changes dynamically during training
     mutate_factor = 1
     # more = more reset mutation, scales linear
-    reset_factor = 1
+    reset_factor = 0.001
     # more = more change mutation, scales linear
-    change_factor = 5
-    # how many non-repeating pairs are created at once - higher number = more uniques
-    pairs_at_once = 5
+    change_factor = 1
+    # how many pairs with unique parents are created at once - higher number = more diversity
+    pairs_at_once = 2
     # 1 in mutation_chance children will be subject to mutation
-    mutation_chance = 6
+    mutation_chance = 5
     # what part of the sets will survive unchanged
-    elitism_factor = 0.2 
-
+    elitism_factor = 0.1
     # the chances that a single element from a layer will be changed, individual per layer
-    layer_mutate_probs = [0.001, 0.001, 0.002, 0.002, 0.003, 0.003, 0.004, 0.004]
+    layer_mutate_probs = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
     
 
     def _create_random_tensor(self, *args):
         array = np.random.rand(*args) - 0.5
         return array
 
-    def _create_param_sets(self):
+    def _create_param_sets(self, amount=None):
+        if not amount:
+            amount = self.gen_size
         sets = []
         for _ in range(self.gen_size):
             tmp = []
@@ -92,7 +94,7 @@ class Evo:
         if not dataloader:
             dataloader = self.dataloader
         self._load_params_to_model(params)
-        score = self._eval_loop()
+        score = self._eval_loop(dataloader)
         return score
 
 
@@ -161,12 +163,12 @@ class Evo:
         pairs = []
 
         while(len(pairs) < num_of_pairs):
-            selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2, p=prob_distribution, replace=False))
-            if selected_indexes not in pairs:
-                pairs.append(selected_indexes)
-            # selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2*self.pairs_at_once, p=prob_distribution, replace=False))
-            # for i in range(self.pairs_at_once):
-            #     pairs.append(selected_indexes[i*2: (i+1)*2])
+            # selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2, p=prob_distribution, replace=False))
+            # if selected_indexes not in pairs:
+            #     pairs.append(selected_indexes)
+            selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2*self.pairs_at_once, p=prob_distribution, replace=False))
+            for i in range(self.pairs_at_once):
+                pairs.append(selected_indexes[i*2: (i+1)*2])
         return pairs
 
 
@@ -191,9 +193,10 @@ class Evo:
 
     def _update_mutation_factor(self, ratio):
         if ratio == 0: return
-        if ratio < 0.05: self.mutate_factor *= 1.01
-        elif ratio > 0.5: self.mutate_factor *= 0.98
+        if ratio < 0.05: self.mutate_factor += 1
+        elif ratio > 0.5: self.mutate_factor -= 1
 
+        self.mutate_factor = max(min(1, self.mutate_factor), 10)
 
     def _create_graph(self, avg, max_):
         plt.plot([100*x for x in avg], label="avg")
@@ -210,11 +213,13 @@ class Evo:
         self.dataloader = dataloader
 
         params_sets = self._create_param_sets() # begin with random arrays of parameters
+        elite_num = int(self.gen_size * self.elitism_factor)
 
         ratio_of_acc = 0.25 # for this the function is 1 at the start
+        times_lived = [0] * self.gen_size 
         average_accuracy = []
         max_accuracy = []
-        for _ in range(epochs):
+        for epoch in range(epochs):
 
             # the following lines create tables to plot for later debugging
             accuracies = np.array(self._evaluate_all(params_sets))
@@ -222,18 +227,35 @@ class Evo:
             max_accuracy.append(max(accuracies))
 
             # used to increase mutation if algorithm has stagnated
-            last_x_avg = sum(average_accuracy[-5:])/len(average_accuracy[-5:])
-            all_avg= sum(average_accuracy)/len(average_accuracy)
-            ratio_of_acc = abs(1 - last_x_avg/all_avg)
+            last_x_avg = sum(max_accuracy[-10:])/len(max_accuracy[-10:])
+            # all_avg= sum(average_accuracy)/len(average_accuracy)
+            ratio_of_acc = 1 - last_x_avg/max_accuracy[-1]
             self._update_mutation_factor(ratio_of_acc)
+
 
             prob_distribution = self._softmax(accuracies)
             # selected_index = np.random.choice(np.arange(gen_size), size=gen_size//2, p=prob_distribution, replace=False)
             # selected_params = [params_sets[x] for x in selected_index]
 
-            temp = sorted(list(zip(prob_distribution, params_sets)), reverse=True, key=lambda x:x[0])[:int(self.gen_size*self.elitism_factor)]
-            temp = list(list(zip(*temp))[1])
-            params_sets = temp + self._create_generation(params_sets, prob_distribution, num_created=math.ceil(self.gen_size*(1-self.elitism_factor)))
+            temp = sorted(list(zip(prob_distribution, params_sets, times_lived)), reverse=True, key=lambda x:x[0])[:elite_num]
+            elites = list(list(zip(*temp))[1])
+
+            # times_lived counts the number of generations a set of parameters has been alive for
+            times_lived = list(list(zip(*temp))[2])
+            times_lived += [0]*(self.gen_size - elite_num)
+            times_lived = [x+1 for x in times_lived]
+            params_sets = elites + self._create_generation(params_sets, prob_distribution, num_created=self.gen_size-elite_num)
+
+            # if accuracy doesn't improve over 10 gens, kill all elites but one
+            # if ratio_of_acc == 0 and epoch > 10:
+            #     params_sets[:elite_num-1] = self._create_param_sets(elite_num-1)
+            print(times_lived)
+
+            # kill elite if it has lived for 10+ generations
+            for i in range(elite_num):
+                if times_lived[i] >= 10:
+                    params_sets[i] = self._create_param_sets(1)[0]
+                    times_lived[i] = 0
 
 
         self._create_graph(average_accuracy, max_accuracy)
@@ -248,5 +270,5 @@ if __name__ == "__main__":
     datasets = random_split(transformed_dataset, (898, 899))
     train_dataloader = DataLoader(datasets[0], batch_size=40, shuffle=True)
     test_dataloader = DataLoader(datasets[1], batch_size=40, shuffle=True)
-    params = my_evo.evolve(100, 20, train_dataloader)
+    params = my_evo.evolve(50, 20, train_dataloader)
     print("Evolved accuracy: " + str(my_evo.evaluate(params, test_dataloader)))
