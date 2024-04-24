@@ -8,12 +8,13 @@ from torch.utils.data import random_split
 import math
 import matplotlib.pyplot as plt
 from dataset import transformed_dataset
+import random
 
 # parameters = [[name, p] for name, p in model.named_parameters()]
 
 # names = [name for name, p in parameters]
 class EvolutionaryAlgorithm:
-    
+
     model = NeuralNetwork()
     gen_size = 10
     dataloader = None
@@ -30,7 +31,7 @@ class EvolutionaryAlgorithm:
     elitism_factor = 0.2
 
     def _create_random_tensor(self, *args):
-        array = np.random.rand(*args) - 0.5
+        array = (np.random.rand(*args) - 0.5)*0.6
         return array
 
     def _create_param_sets(self):
@@ -147,6 +148,37 @@ class EvolutionaryAlgorithm:
 
         return child1, child2
 
+
+    def random_avg(self, arr1, arr2): # returns an array with each value randomly chosen between arr1, arr2 values
+        avg_arr = []
+        for el1, el2 in zip(arr1, arr2):
+            if el1 < el2:
+                avg_arr.append(random.uniform(el1, el2))
+            else:
+                avg_arr.append(random.uniform(el2, el1))
+        return np.array(avg_arr)
+
+    def _average_breed(self, pair):
+        mother, father = pair
+        child1, child2 = [], []
+        i=0
+        for mom, dad in zip(mother, father): # both mom and dad are a layer
+            if i%2 ==0: # some
+                to_child1 = []
+                to_child2 = []
+                for one, two in zip (mom,dad):
+                    to_child1.append(self.random_avg(one,two))
+                    to_child2.append(self.random_avg(one,two))
+                child1.append(np.array(to_child1))
+                child2.append(np.array(to_child2))
+            else:
+                child1.append(self.random_avg(mom,dad))
+                child2.append(self.random_avg(mom,dad))
+
+            i += 1
+        return child1, child2
+
+
     def _choose_parent_indexes(self, num_of_pairs, prob_distribution):
         # num of pairs - how many pairs to create
         # index_range - what indexes to select from
@@ -168,7 +200,7 @@ class EvolutionaryAlgorithm:
         for pair in pairs:
             # this for loop creates kids from pairs of params
             pair = [params_sets[x] for x in pair]
-            new_gen += self._cross_breed(pair)
+            new_gen += self._average_breed(pair)
 
         for i in range(num_created):
             # this for loop is responsible for mutations in kids
@@ -186,7 +218,7 @@ class EvolutionaryAlgorithm:
         # return y
         if ratio == 0: return
         if ratio <0.05: self.mutate_factor *= 1.01
-        else: self.mutate_factor *= 0.99 
+        else: self.mutate_factor *= 0.99
 
 
     def _create_graph(self, avg, max_):
@@ -251,5 +283,5 @@ if __name__ == "__main__":
     datasets = random_split(transformed_dataset, (898, 899))
     train_dataloader = DataLoader(datasets[0], batch_size=40, shuffle=True)
     test_dataloader = DataLoader(datasets[1], batch_size=40, shuffle=True)
-    params = my_evo.evolve(50, 20, train_dataloader)
+    params = my_evo.evolve(200, 20, train_dataloader)
     print("Evolved accuracy: " + str(my_evo.evaluate(params, test_dataloader)))
