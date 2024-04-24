@@ -18,6 +18,8 @@ class Evo:
     model = NeuralNetwork()
     gen_size = 10
     dataloader = None
+    best_ever_accuracy = 0
+    best_ever_params = None
 
     # number of separate times that noise will be added during _mutate_change
     mutation_num = 3
@@ -206,7 +208,11 @@ class Evo:
         plt.legend()
         plt.savefig("plot.png")
 
-
+    def _memorize_best(self, params, acc):
+        if acc > self.best_ever_accuracy:
+            self.best_ever_params = params
+            self.best_ever_accuracy = acc
+        
     def evolve(self, epochs, gen_size, dataloader):
 
         self.gen_size = gen_size
@@ -219,7 +225,7 @@ class Evo:
         times_lived = [0] * self.gen_size 
         average_accuracy = []
         max_accuracy = []
-        for epoch in range(epochs):
+        for _ in range(epochs):
 
             # the following lines create tables to plot for later debugging
             accuracies = np.array(self._evaluate_all(params_sets))
@@ -228,29 +234,23 @@ class Evo:
 
             # used to increase mutation if algorithm has stagnated
             last_x_avg = sum(max_accuracy[-10:])/len(max_accuracy[-10:])
-            # all_avg= sum(average_accuracy)/len(average_accuracy)
+            # all_avg = sum(average_accuracy)/len(average_accuracy)
             ratio_of_acc = 1 - last_x_avg/max_accuracy[-1]
             self._update_mutation_factor(ratio_of_acc)
 
-
             prob_distribution = self._softmax(accuracies)
-            # selected_index = np.random.choice(np.arange(gen_size), size=gen_size//2, p=prob_distribution, replace=False)
-            # selected_params = [params_sets[x] for x in selected_index]
 
-            temp = sorted(list(zip(prob_distribution, params_sets, times_lived)), reverse=True, key=lambda x:x[0])[:elite_num]
+            temp = sorted(list(zip(accuracies, params_sets, times_lived)), reverse=True, key=lambda x:x[0])[:elite_num]
             elites = list(list(zip(*temp))[1])
+            self._memorize_best(elites[0], temp[0][0])
 
             # times_lived counts the number of generations a set of parameters has been alive for
             times_lived = list(list(zip(*temp))[2])
             times_lived += [0]*(self.gen_size - elite_num)
             times_lived = [x+1 for x in times_lived]
+
+            # save next generation
             params_sets = elites + self._create_generation(params_sets, prob_distribution, num_created=self.gen_size-elite_num)
-
-            # if accuracy doesn't improve over 10 gens, kill all elites but one
-            # if ratio_of_acc == 0 and epoch > 10:
-            #     params_sets[:elite_num-1] = self._create_param_sets(elite_num-1)
-            print(times_lived)
-
             # kill elite if it has lived for 10+ generations
             for i in range(elite_num):
                 if times_lived[i] >= 10:
@@ -259,10 +259,10 @@ class Evo:
 
 
         self._create_graph(average_accuracy, max_accuracy)
-        temp = list(zip(self._evaluate_all(params_sets), params_sets))
-        temp = sorted(temp, key=lambda x: x[0])
-        print(temp[0][0], temp[-1][0])
-        return temp[-1][1]
+        # temp = list(zip(self._evaluate_all(params_sets), params_sets))
+        # temp = sorted(temp, key=lambda x: x[0])
+        print("Maximum accuracy acquired: " + str(self.best_ever_accuracy))
+        return self.best_ever_params
 
 
 if __name__ == "__main__":
