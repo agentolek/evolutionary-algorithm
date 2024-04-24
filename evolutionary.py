@@ -11,8 +11,6 @@ from dataset import transformed_dataset
 import random
 
 # TODO: play around with individual layer parameters
-# TODO: best dude must die after x epochs
-# TODO: change breeding to "krzyżowanie uśredniające"
 
 class Evo:
 
@@ -31,9 +29,9 @@ class Evo:
     # more = more change mutation, scales linear
     change_factor = 1
     # how many pairs with unique parents are created at once - higher number = more diversity
-    pairs_at_once = 2
+    pairs_at_once = 3
     # 1 in mutation_chance children will be subject to mutation
-    mutation_chance = 5
+    mutation_chance = 4
     # what part of the sets will survive unchanged
     elitism_factor = 0.1
     # how many gens can a single set stay alive for
@@ -141,10 +139,6 @@ class Evo:
 
         new_set = []
         for i in range(len(params_set)):
-            # reset_prob = (mutation_probs[i] / mutation_factor)*(21-epoch_counter)/20
-            # change_prob = (mutation_probs[i] / mutation_factor)*(epoch_counter+1)/20
-            # temp = mutate_reset(params_set[i], reset_prob)
-            # new_set.append(mutate_change(temp, change_prob))
             temp = self._mutate_reset(params_set[i], self.layer_mutate_probs[i] * self.reset_factor * self.mutate_factor)
             new_set.append(self._mutate_change(temp, self.layer_mutate_probs[i] * self.change_factor * self.mutate_factor))
 
@@ -199,12 +193,12 @@ class Evo:
         pairs = []
 
         while(len(pairs) < num_of_pairs):
-            # selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2, p=prob_distribution, replace=False))
-            # if selected_indexes not in pairs:
-            #     pairs.append(selected_indexes)
             selected_indexes = tuple(np.random.choice(np.arange(len(prob_distribution)), size=2*self.pairs_at_once, p=prob_distribution, replace=False))
             for i in range(self.pairs_at_once):
-                pairs.append(selected_indexes[i*2: (i+1)*2])
+                temp = selected_indexes[i*2: (i+1)*2]
+                if temp not in pairs:
+                    pairs.append(temp)
+        
         return pairs
 
 
@@ -216,7 +210,7 @@ class Evo:
         for pair in pairs:
             # this for loop creates kids from pairs of params
             pair = [params_sets[x] for x in pair]
-            new_gen += self._average_breed(pair)
+            new_gen += self._cross_breed(pair)
 
         for i in range(num_created):
             # this for loop is responsible for mutations in kids
@@ -268,7 +262,6 @@ class Evo:
 
             # used to increase mutation if algorithm has stagnated
             last_x_avg = sum(max_accuracy[-10:])/len(max_accuracy[-10:])
-            # all_avg = sum(average_accuracy)/len(average_accuracy)
             ratio_of_acc = 1 - last_x_avg/max_accuracy[-1]
             self._update_mutation_factor(ratio_of_acc)
 
